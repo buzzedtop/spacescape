@@ -1,0 +1,76 @@
+name: Flutter Build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  clone_repo:
+    runs-on: macOS
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        run: |
+          echo "${GITHUB_WORKSPACE}/_flutter/bin" >> ${GITHUB_PATH}
+
+      - name: Install
+        run: |
+          flutter config --enable-web
+          flutter pub get
+          
+  build_flutter_web:
+    needs: clone_repo
+    runs-on: macOS
+    steps:
+      - name: Build
+        run: |
+          flutter build web
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v4
+        if: github.ref == 'refs/heads/main'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/web
+
+
+  build_flutter_ios:
+    needs: clone_repo
+    runs-on: macOS
+    steps:
+      - name: Build
+        run: |
+          flutter build ios
+
+  build_flutter_android:
+    needs: clone_repo
+    runs-on: macOS
+    steps:
+      - name: Build
+        run: |
+          flutter build apk --split-per-abi
+
+  build_flutter_macos:
+    needs: clone_repo
+    runs-on: macOS
+    steps:
+      - name: Build
+        run: |
+          flutter build macos
+
+  build_flutter_linux:
+    needs: clone_repo
+    runs-on: macOS
+    steps:
+      - name: Build
+        run: |
+          flutter build linux
+
